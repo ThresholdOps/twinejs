@@ -29,6 +29,9 @@ export interface CodeAreaProps
 	id: string;
 	label: string;
 	labelHidden?: boolean;
+	// Normalized blur callback for both CodeMirror and the plain textarea fallback.
+	// Consumers can react to focus leaving the editor without caring which editor
+	// implementation is currently active.
 	onBlur?: () => void;
 	onChangeEditor?: (value: CodeMirror.Editor) => void;
 	onChangeText: (value: string, data?: CodeMirror.EditorChange) => void;
@@ -71,6 +74,7 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 	}
 
 	function handleBlur() {
+		// Keep blur behavior consistent between CodeMirror and the fallback textarea.
 		onBlur?.();
 	}
 
