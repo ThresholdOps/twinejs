@@ -70,7 +70,7 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 		onChangeText(text, data);
 	}
 
-	function handleCodeMirrorBlur() {
+	function handleBlur() {
 		onBlur?.();
 	}
 
@@ -101,13 +101,13 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 				<CodeMirror
 					{...otherProps}
 					onBeforeChange={handleCodeMirrorBeforeChange}
-					onBlur={handleCodeMirrorBlur}
+					onBlur={handleBlur}
 				/>
 			) : (
 				<textarea
 					className="visible"
 					id={id}
-					onBlur={onBlur}
+					onBlur={handleBlur}
 					onChange={({target}) => onChangeText(target.value)}
 					placeholder={otherProps.options?.placeholder}
 					style={style}
