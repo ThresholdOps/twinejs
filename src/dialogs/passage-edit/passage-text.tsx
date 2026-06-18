@@ -41,6 +41,7 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 	// importantly, no React effects fire.
 
 	const onChangeRef = React.useRef(onChange);
+	onChangeRef.current = onChange;
 	const onChangeText = React.useRef<string>();
 	const onChangeTimeout = React.useRef<number>();
 
@@ -49,10 +50,6 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 	// up-to-date with what the user has typed, but the global context may not be.
 	// This is because updating global context causes re-rendering in the story
 	// map, which can be time-intensive.
-
-	React.useEffect(() => {
-		onChangeRef.current = onChange;
-	}, [onChange]);
 
 	React.useEffect(() => {
 		// A change to passage text has occurred externally, e.g. through a find and
