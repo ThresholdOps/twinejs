@@ -237,6 +237,8 @@ describe('<PassageText>', () => {
 		expect(onChange.mock.calls).toEqual([['mock-change2']]);
 	});
 
+	// These tests document the bug fix: pending local edits should be committed
+	// before focus changes or unmounts can lead to build/export using stale state.
 	it('flushes pending passage text changes when the editor loses focus', () => {
 		const onChange = jest.fn();
 
