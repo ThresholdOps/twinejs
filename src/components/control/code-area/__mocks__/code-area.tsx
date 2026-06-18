@@ -24,6 +24,8 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 			<label>
 				{props.label}{' '}
 				<textarea
+					// Forward blur so PassageText can test pending-change flushing without
+					// depending on a real CodeMirror instance.
 					onBlur={props.onBlur}
 					onChange={handleOnChange}
 					value={props.value}
