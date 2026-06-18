@@ -237,6 +237,40 @@ describe('<PassageText>', () => {
 		expect(onChange.mock.calls).toEqual([['mock-change2']]);
 	});
 
+	it('flushes pending passage text changes when the editor loses focus', () => {
+		const onChange = jest.fn();
+
+		renderComponent({onChange});
+		expect(onChange).not.toHaveBeenCalled();
+
+		const editor = screen.getByLabelText(
+			'dialogs.passageEdit.passageTextEditorLabel'
+		);
+
+		fireEvent.change(editor, {target: {value: 'mock-change'}});
+		expect(onChange).not.toHaveBeenCalled();
+		fireEvent.blur(editor);
+		expect(onChange.mock.calls).toEqual([['mock-change']]);
+		jest.runOnlyPendingTimers();
+		expect(onChange).toBeCalledTimes(1);
+	});
+
+	it('flushes pending passage text changes on unmount', () => {
+		const onChange = jest.fn();
+		const {unmount} = renderComponent({onChange});
+
+		const editor = screen.getByLabelText(
+			'dialogs.passageEdit.passageTextEditorLabel'
+		);
+
+		fireEvent.change(editor, {target: {value: 'mock-change'}});
+		expect(onChange).not.toHaveBeenCalled();
+		unmount();
+		expect(onChange.mock.calls).toEqual([['mock-change']]);
+		jest.runOnlyPendingTimers();
+		expect(onChange).toBeCalledTimes(1);
+	});
+
 	it('uses CodeMirror in the code area if enabled in preferences', () => {
 		renderComponent({}, {prefs: {useCodeMirror: true}});
 		expect(screen.getByTestId('mock-code-area')!.dataset.useCodeMirror).toBe(
