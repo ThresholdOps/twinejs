@@ -40,6 +40,7 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 	// These are refs so that changing them doesn't trigger a rerender, and more
 	// importantly, no React effects fire.
 
+	const onChangeRef = React.useRef(onChange);
 	const onChangeText = React.useRef<string>();
 	const onChangeTimeout = React.useRef<number>();
 
@@ -48,6 +49,10 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 	// up-to-date with what the user has typed, but the global context may not be.
 	// This is because updating global context causes re-rendering in the story
 	// map, which can be time-intensive.
+
+	React.useEffect(() => {
+		onChangeRef.current = onChange;
+	}, [onChange]);
 
 	React.useEffect(() => {
 		// A change to passage text has occurred externally, e.g. through a find and
@@ -59,54 +64,45 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 		}
 	}, [localText, passage.text]);
 
-	const handleLocalChangeText = React.useCallback(
-		(text: string) => {
-			// Set local state because the CodeMirror instance is controlled, and
-			// updates there should be immediate.
-
-			setLocalText(text);
-
-			// If there was a pending update, cancel it.
-
-			if (onChangeTimeout.current) {
-				window.clearTimeout(onChangeTimeout.current);
-			}
-
-			// Save the text value in case we need to reset the timeout in the next
-			// effect.
-
-			onChangeText.current = text;
-
-			// Queue a call to onChange.
-
-			onChangeTimeout.current = window.setTimeout(() => {
-				// Important to reset this ref so that we don't try to cancel fired
-				// timeouts above.
-
-				onChangeTimeout.current = undefined;
-
-				// Finally call the onChange prop.
-
-				onChange(onChangeText.current!);
-			}, 1000);
-		},
-		[onChange, onEditorChange]
-	);
-
-	// If the onChange prop changes while an onChange call is pending, reset the
-	// timeout and point it to the correct callback.
-
-	React.useEffect(() => {
+	const flushPendingChange = React.useCallback(() => {
 		if (onChangeTimeout.current) {
 			window.clearTimeout(onChangeTimeout.current);
-			onChangeTimeout.current = window.setTimeout(() => {
-				// This body must be the same as in the timeout in the previous effect.
-
-				onChangeTimeout.current = undefined;
-				onChange(onChangeText.current!);
-			}, 1000);
+			onChangeTimeout.current = undefined;
+			onChangeRef.current(onChangeText.current!);
 		}
-	}, [onChange]);
+	}, []);
+
+	React.useEffect(() => () => flushPendingChange(), [flushPendingChange]);
+
+	const handleLocalChangeText = React.useCallback((text: string) => {
+		// Set local state because the CodeMirror instance is controlled, and
+		// updates there should be immediate.
+
+		setLocalText(text);
+
+		// If there was a pending update, cancel it.
+
+		if (onChangeTimeout.current) {
+			window.clearTimeout(onChangeTimeout.current);
+		}
+
+		// Save the text value in case we need to flush it before the debounce fires.
+
+		onChangeText.current = text;
+
+		// Queue a call to onChange.
+
+		onChangeTimeout.current = window.setTimeout(() => {
+			// Important to reset this ref so that we don't try to cancel fired
+			// timeouts above.
+
+			onChangeTimeout.current = undefined;
+
+			// Finally call the onChange prop.
+
+			onChangeRef.current(onChangeText.current!);
+		}, 1000);
+	}, []);
 
 	const handleMount = React.useCallback(
 		(editor: CodeMirror.Editor) => {
@@ -171,6 +167,7 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 				id={`passage-dialog-passage-text-code-area-${passage.id}`}
 				label={t('dialogs.passageEdit.passageTextEditorLabel')}
 				labelHidden
+				onBlur={flushPendingChange}
 				onChangeEditor={onEditorChange}
 				onChangeText={handleLocalChangeText}
 				options={options}
