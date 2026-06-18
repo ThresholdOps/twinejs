@@ -41,6 +41,8 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 	// importantly, no React effects fire.
 
 	const onChangeRef = React.useRef(onChange);
+	// A pending debounce or blur flush should always call the latest onChange
+	// callback without resetting the debounce timer on every parent rerender.
 	onChangeRef.current = onChange;
 	const onChangeText = React.useRef<string>();
 	const onChangeTimeout = React.useRef<number>();
@@ -63,12 +65,16 @@ export const PassageText: React.FC<PassageTextProps> = props => {
 
 	const flushPendingChange = React.useCallback(() => {
 		if (onChangeTimeout.current) {
+			// If the user leaves or closes the editor before the debounce fires, commit
+			// the latest local text now so build/export actions don't publish stale text.
 			window.clearTimeout(onChangeTimeout.current);
 			onChangeTimeout.current = undefined;
 			onChangeRef.current(onChangeText.current!);
 		}
 	}, []);
 
+	// Closing the passage editor should commit the same pending text that blur
+	// would commit. This prevents the last typed edit from being dropped.
 	React.useEffect(() => () => flushPendingChange(), [flushPendingChange]);
 
 	const handleLocalChangeText = React.useCallback((text: string) => {
