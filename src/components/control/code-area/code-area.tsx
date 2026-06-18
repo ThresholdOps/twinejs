@@ -20,7 +20,8 @@ import {initPrefixTriggerGlobally} from '../../../codemirror/prefix-trigger';
 
 initPrefixTriggerGlobally();
 
-export interface CodeAreaProps extends Omit<IControlledCodeMirror, 'onBeforeChange'> {
+export interface CodeAreaProps
+	extends Omit<IControlledCodeMirror, 'onBeforeChange' | 'onBlur'> {
 	fontFamily?: string;
 	fontScale?: number;
 	// ID is required because nesting the input inside the label causes screen
@@ -28,6 +29,7 @@ export interface CodeAreaProps extends Omit<IControlledCodeMirror, 'onBeforeChan
 	id: string;
 	label: string;
 	labelHidden?: boolean;
+	onBlur?: () => void;
 	onChangeEditor?: (value: CodeMirror.Editor) => void;
 	onChangeText: (value: string, data?: CodeMirror.EditorChange) => void;
 	useCodeMirror?: boolean;
@@ -40,6 +42,7 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 		fontScale,
 		id,
 		label,
+		onBlur,
 		onChangeEditor,
 		onChangeText,
 		useCodeMirror,
@@ -65,6 +68,10 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 	) {
 		onChangeEditor?.(editor);
 		onChangeText(text, data);
+	}
+
+	function handleCodeMirrorBlur() {
+		onBlur?.();
 	}
 
 	// We need to set the ID of the underlying <textarea> ourselves if we're using
@@ -94,17 +101,18 @@ export const CodeArea: React.FC<CodeAreaProps> = props => {
 				<CodeMirror
 					{...otherProps}
 					onBeforeChange={handleCodeMirrorBeforeChange}
+					onBlur={handleCodeMirrorBlur}
 				/>
 			) : (
 				<textarea
 					className="visible"
 					id={id}
+					onBlur={onBlur}
 					onChange={({target}) => onChangeText(target.value)}
 					placeholder={otherProps.options?.placeholder}
 					style={style}
-				>
-					{otherProps.value}
-				</textarea>
+					value={otherProps.value}
+				/>
 			)}
 		</div>
 	);
